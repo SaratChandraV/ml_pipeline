@@ -70,21 +70,21 @@ def setup_database(tickers):
     #Drop tables if exists
     cursor = conn.cursor()
     for ticker in tickers:
-        drop_source_table(ticker=tickers,cursor=cursor)
+        drop_source_table(ticker=ticker,cursor=cursor)
     conn.commit()
     cursor.close()
 
     #Create Tables
     cursor = conn.cursor()
     for ticker in tickers:
-        create_source_table(ticker=tickers,cursor=cursor)
+        create_source_table(ticker=ticker,cursor=cursor)
     conn.commit()
     cursor.close()
 
     #Create Triggers
     cursor = conn.cursor()
     for ticker in tickers:
-        create_update_trigger(ticker=tickers,cursor=cursor)
+        create_update_trigger(ticker=ticker,cursor=cursor)
     conn.commit()
     cursor.close()
 
