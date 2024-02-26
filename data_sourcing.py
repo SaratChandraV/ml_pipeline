@@ -18,7 +18,7 @@ for ticker in tickers:
 db_params = keys.db_params.db_params
 
 def get_source_table_name(ticker):
-    return ticker + "_daily_stock_data"
+    return ticker.lower() + "_daily_stock_data"
 
 def get_source_table_trigger_name(ticker):
     return get_source_table_name(ticker=ticker) + "_last_modified_trigger"
