@@ -46,9 +46,9 @@ def upsert_source_data(ticker,cursor):
     end_date = get_today_date()
     end_date = max(start_date,end_date)
     data_df = get_stock_data_from_yf(ticker=ticker,start_date=start_date,end_date=end_date)
-    data_df = data_df['Open', 'High', 'Low', 'Close', 'Volume']
     if data_df.empty:
         return "Empty"
+    data_df = data_df['Open', 'High', 'Low', 'Close', 'Volume']
     table_name = get_source_table_name(ticker=ticker)
     for index,row in data_df.iterrows():
         data = {
