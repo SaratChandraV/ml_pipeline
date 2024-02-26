@@ -30,7 +30,7 @@ def get_latest_date_in_DB(ticker,cursor):
     return start_date
 
 def get_today_date():
-    return datetime.now()
+    return datetime.now().date()
 
 def get_stock_data_from_yf(ticker,start_date,end_date):
     return yf.download(ticker,start=start_date,end=end_date)
