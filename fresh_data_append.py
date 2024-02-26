@@ -44,6 +44,7 @@ def upsert_source_data(ticker,cursor):
         handle_no_data_error(ticker=ticker)
         return "Failed"
     end_date = get_today_date()
+    end_date = max(start_date,end_date)
     data_df = get_stock_data_from_yf(ticker=ticker,start_date=start_date,end_date=end_date)
     data_df = data_df['Open', 'High', 'Low', 'Close', 'Volume']
     if data_df.empty:
@@ -66,7 +67,8 @@ def upsert_source_tables(tickers):
     conn = psycopg2.connect(**db_params)
     for ticker in tickers:
         cursor = conn.cursor()
-        upsert_source_data(ticker=ticker,cursor=cursor)
+        status_msg = upsert_source_data(ticker=ticker,cursor=cursor)
+        print(ticker,status_msg)
         conn.commit()
         cursor.close()
     conn.close()
