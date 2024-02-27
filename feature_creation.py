@@ -8,10 +8,11 @@ import numpy as np
 import os
 
 path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\postgresql-42.7.2.jar"
-hadoopFilesPath = r"C:\\Users\\Administrator\\Documents\\hadoop-3.0.0"
+hadoopFilesPath = "C:\\Users\\Administrator\\Documents\\hadoop-3.0.0"
 os.environ["HADOOP_HOME"] = hadoopFilesPath
 os.environ["hadoop.home.dir"] = hadoopFilesPath
 os.environ["PATH"] = os.environ["PATH"] + f";{hadoopFilesPath}\\bin"
+os.environ['PYSPARK_PYTHON'] = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
 
 # Initialize Spark Session
 spark = SparkSession.builder \
@@ -37,7 +38,7 @@ def make_DB_properties(db_params):
 
 def read_stock_data(ticker,db_params):
     table_name = get_source_table_name(ticker=ticker)
-    query = f"(SELECT date, close FROM {table_name}) AS temp"
+    query = f"(SELECT date, close, volume FROM {table_name}) AS temp"
 
     database_url = make_JDBC_url(db_params=db_params)
     properties = make_DB_properties(db_params=db_params)
@@ -179,7 +180,7 @@ def update_features_tables(tickers):
         print("{} features creation has started.".format(ticker))
         df = read_stock_data(ticker=ticker,db_params=db_params)
         df = compute_all_features(df)
-        write_feature_to_DB(df)
+        write_feature_to_DB(df=df,ticker=ticker,db_params=db_params)
         print("{} features has been written.".format(ticker))
 
 update_features_tables(tickers=tickers)
