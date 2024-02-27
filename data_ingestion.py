@@ -36,7 +36,7 @@ def make_DB_properties(db_params):
 def read_stock_data(ticker,db_params):
     table_name = get_source_table_name(ticker=ticker)
     
-    query = f"(SELECT * FROM {table_name}) AS temp"
+    query = f"(SELECT date,open,high,low,volume FROM {table_name}) AS temp"
     
     database_url = make_JDBC_url(db_params=db_params)
     properties = make_DB_properties(db_params=db_params)
@@ -58,7 +58,7 @@ def read_features_data(ticker,db_params):
     return df
 
 def get_all_columns_df(df_stock,df_features):
-    return df_features.join(df_stock, df_stock["date"] == df_features["date"], "inner")
+    return df_stock.join(df_features, df_stock["date"] == df_features["date"], "inner").drop(df_features.date)
 
 for ticker in tickers[0:1]:
     df_stock = read_stock_data(ticker=ticker,db_params=db_params)
