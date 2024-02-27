@@ -6,7 +6,7 @@ import pandas as pd
 import keys
 import numpy as np
 
-path_to_postgres_driver = "C:\Users\Administrator\Documents\GitHub\ml_pipeline\postgresql-42.7.2.jar"
+path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\GitHub\\ml_pipeline\\postgresql-42.7.2.jar"
 
 # Initialize Spark Session
 spark = SparkSession.builder \
@@ -171,9 +171,10 @@ def write_feature_to_DB(df,ticker,db_params):
 
 def update_features_tables(tickers):
     for ticker in tickers:
+        print("{} features creation has started.".format(ticker))
         df = read_stock_data(ticker=ticker,db_params=db_params)
         df = compute_all_features(df)
         write_feature_to_DB(df)
-        print("{} features has been written.")
+        print("{} features has been written.".format(ticker))
 
 update_features_tables(tickers=tickers)
