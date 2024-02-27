@@ -6,8 +6,13 @@ import pandas as pd
 import keys
 import numpy as np
 
+path_to_postgres_driver = "C:\Users\Administrator\Documents\GitHub\ml_pipeline\postgresql-42.7.2.jar"
+
 # Initialize Spark Session
-spark = SparkSession.builder.appName("Stock Features").getOrCreate()
+spark = SparkSession.builder \
+    .appName("Stock Features")\
+    .config("spark.jars", path_to_postgres_driver)\
+    .getOrCreate()
 
 tickers = pd.read_json('ticker_symbols.json')['ticker'].tolist()
 
@@ -28,6 +33,7 @@ def make_DB_properties(db_params):
 def read_stock_data(ticker,db_params):
     table_name = get_source_table_name(ticker=ticker)
     query = f"(SELECT date, close FROM {table_name}) AS temp"
+
     database_url = make_JDBC_url(db_params=db_params)
     properties = make_DB_properties(db_params=db_params)
     df = spark.read.jdbc(url=database_url, table=query, properties=properties)
