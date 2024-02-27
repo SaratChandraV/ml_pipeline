@@ -5,8 +5,13 @@ from pyspark.sql.types import StructType, StructField, FloatType
 import pandas as pd
 import keys
 import numpy as np
+import os
 
-path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\GitHub\\ml_pipeline\\postgresql-42.7.2.jar"
+path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\postgresql-42.7.2.jar"
+hadoopFilesPath = r"C:\\Users\\Administrator\\Documents\\hadoop-3.0.0"
+os.environ["HADOOP_HOME"] = hadoopFilesPath
+os.environ["hadoop.home.dir"] = hadoopFilesPath
+os.environ["PATH"] = os.environ["PATH"] + f";{hadoopFilesPath}\\bin"
 
 # Initialize Spark Session
 spark = SparkSession.builder \
