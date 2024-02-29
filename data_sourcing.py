@@ -1,7 +1,5 @@
 import yfinance as yf
-import keys
 import psycopg2
-import pandas as pd
 
 def download_max_data(ticker):
     stock = yf.Ticker(ticker)

@@ -2,8 +2,6 @@ import psycopg2
 from psycopg2 import sql
 import yfinance as yf
 from datetime import datetime, timedelta
-import keys
-import pandas as pd
 import data_sourcing
 
 def get_latest_date_in_DB(ticker,cursor):

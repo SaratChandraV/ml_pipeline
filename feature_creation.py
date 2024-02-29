@@ -2,8 +2,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import avg, col, lag, stddev, monotonically_increasing_id
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, FloatType
-import pandas as pd
-import keys
 import numpy as np
 import os
 import data_sourcing

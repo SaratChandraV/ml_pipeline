@@ -1,5 +1,3 @@
-import pandas as pd
-import keys
 from pyspark.sql import SparkSession
 import os
 import data_sourcing
