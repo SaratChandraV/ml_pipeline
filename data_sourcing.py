@@ -1,21 +1,18 @@
-import pandas as pd
-import numpy as np
 import yfinance as yf
 import keys
 import psycopg2
-
-tickers = pd.read_json('ticker_symbols.json')['ticker'].tolist()
+import pandas as pd
 
 def download_max_data(ticker):
     stock = yf.Ticker(ticker)
     data = stock.history(period="max")
     return data[['Open','High','Low','Close','Volume']]
 
-stock_data = {}
-for ticker in tickers:
-    stock_data[ticker] = download_max_data(ticker=ticker)
-
-db_params = keys.db_params.db_params
+def download_all_stock_data(tickers):
+    stock_data = {}
+    for ticker in tickers:
+        stock_data[ticker] = download_max_data(ticker=ticker)
+    return stock_data
 
 def get_source_table_name(ticker):
     return ticker.lower() + "_daily_stock_data"
@@ -64,7 +61,7 @@ def create_update_trigger(ticker,cursor):
         FOR EACH ROW EXECUTE FUNCTION {trigger_function_name}();
     """)
 
-def setup_database(tickers):
+def setup_database(tickers,db_params):
     conn = psycopg2.connect(**db_params)
 
     #Drop tables if exists
@@ -90,8 +87,6 @@ def setup_database(tickers):
 
     conn.close()
 
-setup_database(tickers)
-
 def insert_stock_data(ticker,cursor,data):
     table_name = get_source_table_name(ticker=ticker)
     for index, row in data.iterrows():
@@ -101,7 +96,7 @@ def insert_stock_data(ticker,cursor,data):
             ON CONFLICT (date) DO NOTHING;
         """, (index.date(), row['Open'], row['High'], row['Low'], row['Close'], row['Volume']))
 
-def insert_source_data(tickers,data):
+def insert_source_data(tickers,data,db_params):
     conn = psycopg2.connect(**db_params)
     for ticker in tickers:
         cursor = conn.cursor()
@@ -110,4 +105,9 @@ def insert_source_data(tickers,data):
         cursor.close()
     conn.close()
 
-insert_source_data(tickers=tickers,data=stock_data)
+# Usage
+# db_params = keys.db_params.db_params
+# tickers = pd.read_json('ticker_symbols.json')
+# stock_data = download_all_stock_data(tickers=tickers)
+# setup_database(tickers=tickers,db_params=db_params)
+# insert_source_data(tickers=tickers,data=stock_data,db_params=db_params)

@@ -6,29 +6,10 @@ import pandas as pd
 import keys
 import numpy as np
 import os
-
-path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\postgresql-42.7.2.jar"
-hadoopFilesPath = "C:\\Users\\Administrator\\Documents\\hadoop-3.0.0"
-os.environ["HADOOP_HOME"] = hadoopFilesPath
-os.environ["hadoop.home.dir"] = hadoopFilesPath
-os.environ["PATH"] = os.environ["PATH"] + f";{hadoopFilesPath}\\bin"
-os.environ['PYSPARK_PYTHON'] = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
-
-# Initialize Spark Session
-spark = SparkSession.builder \
-    .appName("Stock Features")\
-    .config("spark.jars", path_to_postgres_driver)\
-    .getOrCreate()
-
-tickers = pd.read_json('ticker_symbols.json')['ticker'].tolist()
-
-def get_source_table_name(ticker):
-    return ticker.lower() + "_daily_stock_data"
+import data_sourcing
 
 def get_feature_table_name(ticker):
     return ticker.lower() + "_features_data"
-
-db_params = keys.db_params.db_params
 
 def make_JDBC_url(db_params):
     return 'jdbc:postgresql://{}:{}/{}'.format(db_params['host'],db_params['port'],db_params['database'])
@@ -36,8 +17,8 @@ def make_JDBC_url(db_params):
 def make_DB_properties(db_params):
     return {"user": db_params['user'], "password": db_params['password'], "driver": "org.postgresql.Driver"}
 
-def read_stock_data(ticker,db_params):
-    table_name = get_source_table_name(ticker=ticker)
+def read_stock_data(ticker,db_params,spark):
+    table_name = data_sourcing.get_source_table_name(ticker=ticker)
     query = f"(SELECT date, close, volume FROM {table_name}) AS temp"
 
     database_url = make_JDBC_url(db_params=db_params)
@@ -61,7 +42,7 @@ def compute_ema_list(prices, span=10):
     
     return ema_values
 
-def compute_ema(df,column_name="close", span=10):
+def compute_ema(spark,df,column_name="close", span=10):
     """
     Add EMA column to DataFrame.
     """
@@ -94,13 +75,13 @@ def compute_ema(df,column_name="close", span=10):
     
     return df
 
-def compute_macd(df):
+def compute_macd(df,spark):
     """
     Calculate Moving Average Convergence Divergence (MACD)
     """
     # Calculate EMA for 12 and 26 days
-    df = compute_ema(df, column_name="close", span=12)
-    df = compute_ema(df, column_name="close", span=26)
+    df = compute_ema(spark=spark, df=df, column_name="close", span=12)
+    df = compute_ema(spark=spark, df=df, column_name="close", span=26)
     
     # Calculate MACD
     df = df.withColumn("MACD", col("EMA_12") - col("EMA_26"))
@@ -128,19 +109,19 @@ def calculate_volume_change(df):
     
     return df
 
-def compute_all_features(df):
+def compute_all_features(df,spark):
     """
     Main function to compute all stock features.
     """
     
-    df = compute_ema(df)
-    df = compute_macd(df)
+    df = compute_ema(spark,df,column_name="close", span=10)
+    df = compute_macd(df=df,spark=spark)
     df = calculate_bollinger_bands(df)
     df = calculate_volume_change(df)
 
     return df
 
-def get_feature_table(ticker,db_params):
+def get_feature_table(ticker,db_params,spark):
     table_name = get_feature_table_name(ticker=ticker)
     database_url = make_JDBC_url(db_params=db_params)
     properties = make_DB_properties(db_params=db_params)
@@ -175,12 +156,27 @@ def write_feature_to_DB(df,ticker,db_params):
         df.write.jdbc(url=database_url, table=table_name, mode=mode, properties=properties)
 
 
-def update_features_tables(tickers):
+def update_features_tables(tickers,db_params):
+    path_to_postgres_driver = "C:\\Users\\Administrator\\Documents\\postgresql-42.7.2.jar"
+    hadoopFilesPath = "C:\\Users\\Administrator\\Documents\\hadoop-3.0.0"
+    os.environ["HADOOP_HOME"] = hadoopFilesPath
+    os.environ["hadoop.home.dir"] = hadoopFilesPath
+    os.environ["PATH"] = os.environ["PATH"] + f";{hadoopFilesPath}\\bin"
+    os.environ['PYSPARK_PYTHON'] = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
+
+    # Initialize Spark Session
+    spark = SparkSession.builder \
+        .appName("Stock Features")\
+        .config("spark.jars", path_to_postgres_driver)\
+        .getOrCreate()
     for ticker in tickers:
         print("{} features creation has started.".format(ticker))
-        df = read_stock_data(ticker=ticker,db_params=db_params)
-        df = compute_all_features(df)
+        df = read_stock_data(ticker=ticker,db_params=db_params,spark=spark)
+        df = compute_all_features(df=df,spark=spark)
         write_feature_to_DB(df=df,ticker=ticker,db_params=db_params)
         print("{} features has been written.".format(ticker))
 
-update_features_tables(tickers=tickers)
+#Usage
+# tickers = pd.read_json('ticker_symbols.json')['ticker'].tolist()
+# db_params = keys.db_params.db_params
+# update_features_tables(tickers=tickers,db_params=db_params)
